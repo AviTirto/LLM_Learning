@@ -4,6 +4,7 @@ from openai import AzureOpenAI
 from dotenv import load_dotenv
 import os
 from io import BytesIO
+import time
 
 app = FastAPI()
 load_dotenv()
@@ -36,7 +37,11 @@ def generate_response(text: str, chat_client):
     response = chat_client.chat.completions.create(
             model=os.getenv("CHATMODEL_DEPLOYMENT_MODEL"),
             messages=[
-                {"role": "system", "content": "You work for mandiri sekuritas. We just released our new trading platform called growin."},
+                {"role": "system", "content": """
+                You work for mandiri sekuritas. We just released our new trading platform called growin.
+                Growin offers a comprehensive range of features for stock trading, mutual fund investment, and commodities trading.
+                Growin offers an investment experience to you, that is now better, easier, and more convenient.
+                """},
                 {"role": "user", "content": f"{text}"},
             ],
             temperature=0.2,
@@ -55,10 +60,25 @@ def TTS(text: str, tts_client):
 
 @app.post("/talk")
 async def talk(file: UploadFile = File(...), clients:getClients = Depends()):
+    start = time.time()
     audio = await file.read()
     buffer = BytesIO(audio)
     buffer.name = 'audio.m4a'
+    end = time.time()
+    print("Parsing Input File: ", end-start)
     
+    start = time.time()
     transcription = transcribe_audio(buffer, clients["whisper_client"])
+    end = time.time()
+    print("Transcription: ", end-start)
+
+    start = time.time()
     response = generate_response(transcription.text, clients["chat_client"])
-    return TTS(response, clients["tts_client"])
+    end = time.time()
+    print("ChatGPT Conversation: ", end-start)
+
+    start = time.time()
+    output = TTS(response, clients["tts_client"])
+    end = time.time()
+    print("TTS: ", end-start)
+    return output
