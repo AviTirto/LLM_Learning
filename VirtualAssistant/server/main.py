@@ -68,17 +68,14 @@ def TTS(text: str, tts_client):
 
 def audio_to_gen_response(audio):
     prompt = """
-    You work for mandiri sekuritas. We just released our new trading platform called growin.
-    Growin offers a comprehensive range of features for stock trading, mutual fund investment, and commodities trading.
-    Growin offers an investment experience to you, that is now better, easier, and more convenient.
-    Listen to the audio clip and answer the question.
+    Listen to the audio clip and respond.
     """
 
     credentials = service_account.Credentials.from_service_account_file(os.getenv("GEMINI_CREDENTIALS"))
     vertexai.init(project="mansek-data", location="us-central1", credentials=credentials)
     
     model = GenerativeModel(
-        "gemini-1.5-pro-001",
+        "gemini-1.5-flash-001",
     )
 
     audio_file = Part.from_data(
@@ -120,9 +117,9 @@ async def talk(file: UploadFile = File(...), clients:getClients = Depends()):
     return output
 
 @app.post("/fast_talk")
-async def talk(file: UploadFile = File(...), clients:getClients = Depends()):
+async def talk(mp3: UploadFile = File(...), clients:getClients = Depends()):
     start = time.time()
-    audio = await file.read()
+    audio = await mp3.read()
     buffer = base64.b64encode(audio)
     buffer = buffer.decode('utf-8')
     end = time.time()
