@@ -49,6 +49,9 @@ def generate_response(text: str, chat_client):
         )
     return response.choices[0].message.content
 
+def audio_to_gen_response(audio, chat_client):
+    pass
+
 def TTS(text: str, tts_client):
     response = tts_client.audio.speech.create(
         model=os.getenv("TTS_DEPLOYMENT_MODEL"),
@@ -74,6 +77,26 @@ async def talk(file: UploadFile = File(...), clients:getClients = Depends()):
 
     start = time.time()
     response = generate_response(transcription.text, clients["chat_client"])
+    end = time.time()
+    print("ChatGPT Conversation: ", end-start)
+
+    start = time.time()
+    output = TTS(response, clients["tts_client"])
+    end = time.time()
+    print("TTS: ", end-start)
+    return output
+
+@app.post("/fast_talk")
+async def talk(file: UploadFile = File(...), clients:getClients = Depends()):
+    start = time.time()
+    audio = await file.read()
+    buffer = BytesIO(audio)
+    buffer.name = 'audio.m4a'
+    end = time.time()
+    print("Parsing Input File: ", end-start)
+    
+    start = time.time()
+    response = generate_response("...", clients["chat_client"])
     end = time.time()
     print("ChatGPT Conversation: ", end-start)
 
