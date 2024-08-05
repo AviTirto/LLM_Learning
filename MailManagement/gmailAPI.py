@@ -6,6 +6,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from google.generativeai.types import Tool
+
+import QueryFunctionDeclerations
+
 class BaseGmail():
     def __init__(self):
         self.SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -31,7 +35,17 @@ class BaseGmail():
         except HttpError as error:
             print(f"An error occurred: {error}")
 
-    def getFolderNames(self):
+
+
+class QueryGmail(BaseGmail):
+    def __init__(self):
+        super().__init__()
+        self.tools =  [QueryFunctionDeclerations.get_folder_names]
+
+    def getTools(self):
+        return self.tools
+    
+    def getFolderNames(self) -> list[str]:
         try:
             results = self.service.users().labels().list(userId='me').execute()
             labels = results.get('labels', [])
