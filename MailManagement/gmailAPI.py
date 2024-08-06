@@ -25,7 +25,8 @@ class BaseGmail():
                 flow = InstalledAppFlow.from_client_secrets_file(
                     "../../secret_client.json", self.SCOPES
                 )
-            self.creds = flow.run_local_server(port=0)
+                self.creds = flow.run_local_server(port=0)
+                
             # Save the credentials for the next run
             with open("../../secret_client.json", "w") as token:
                 token.write(self.creds.to_json())
