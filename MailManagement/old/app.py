@@ -1,6 +1,10 @@
 import streamlit as st
-from MainChat import MasterChat
+from langchain_community.chat_message_histories import (
+    StreamlitChatMessageHistory
+)
+from Planners import MasterChat
 
+msgs = StreamlitChatMessageHistory(key = "langchain_messages")
 st.set_page_config(page_title="Gmail Manager", page_icon="📖")
 st.title('Assistant to the Gmail Manager')
 
@@ -24,7 +28,7 @@ if prompt := st.chat_input(placeholder='Ask me your data driven questions...'):
         st.markdown(prompt)
     with st.chat_message("assistant", avatar='🤖'):
         message_placeholder = st.empty()
-        response = st.session_state.master_chat.sendMessage(prompt)
+        response = st.session_state.master_chat.chat(prompt)
 
         with message_placeholder.container():
             st.markdown(response)

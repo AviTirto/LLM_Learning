@@ -2,26 +2,17 @@
 import os
 from dotenv import load_dotenv
 
-# Langchain Imports
-from langchain_google_genai import (
-    GoogleGenerativeAI,
-    ChatGoogleGenerativeAI,
-    HarmBlockThreshold,
-    HarmCategory,
-)
+# Gemini Imports
+import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-)
-
-# Templates Import
-from Templates import base_system_chat_template, base_user_chat_template
-
+# Configuring Gemini
 load_dotenv()
-api_key = os.getenv('GOOGLE_API_KEY')
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
 class BaseLLM():
     def __init__(self, **kwargs):
+        self.system_instructions = kwargs.get('sys_detail', "")
 
         self.safety_settings = {
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -30,48 +21,28 @@ class BaseLLM():
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
         }
 
-        self.model = GoogleGenerativeAI(
-            model='models/gemini-1.5-flash',
-            google_api_key = api_key,
-            safety_settings = self.safety_settings,
+        self.model = genai.GenerativeModel(
+            "gemini-1.5-flash",
+            system_instruction = self.system_instructions,
         )
 
     def getModel(self):
         return self.model
-
-    def llm(self, prompt: str):
-        return self.model.invoke(prompt)
     
-class BaseChat():
+
+class BaseChat(BaseLLM):
     def __init__(self, **kwargs):
+        sys_detail = kwargs.get('sys_detail', "")
 
-        # Chat Model Setup
-        self.safety_settings = {
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        }
+        super().__init__(sys_detail = sys_detail)
 
-        self.chat_model = ChatGoogleGenerativeAI(
-            model='models/gemini-1.5-flash',
-            google_api_key = api_key,
-            safety_settings = self.safety_settings, 
-            temperature=0,
+        self.chat = self.getModel().start_chat(history = [])
+
+    def sendMessage(self, prompt:str, **kwargs):
+        tools = kwargs.get('tools', [])
+
+        response = self.chat.send_message(
+            prompt,
         )
-        
-        self.default_prompt = ChatPromptTemplate([('system', base_system_chat_template), ('human', base_user_chat_template)])
 
-    def getChatModel(self):
-        return self.chat_model
-
-    def chat(self, prompt: str, **kwargs):
-        chat_prompt = kwargs.get('prompt', self.default_prompt)
-        input_variables = kwargs.get('input', {'prompt': prompt})
-        history = kwargs.get('history', None)
-        memory = kwargs.get('memory', None)
-
-        runnable = chat_prompt | self.chat_model
-
-        response = runnable.invoke(input_variables)
-        return response.content
+        return response.text
