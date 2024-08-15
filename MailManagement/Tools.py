@@ -60,3 +60,28 @@ class GmailTools(BaseTools):
             msg = "An error occured while fetching the folder names."
             return [], msg
     
+    def getEmails(self, **kwargs):
+        older_than = kwargs.get('older_than', None)
+        newer_than = kwargs.get('newer_than', None)
+
+        query = ""
+        if older_than != None:
+            query += f" older_than:{int(older_than)}d"
+        if newer_than != None:
+            query += f" newer_than:{int(newer_than)}d"
+        print("Final Query:", query)
+        try:
+            results = self.service.users().messages().list(userId='me', q=query, maxResults = 5).execute()
+            emails = results.get('messages', [])
+
+            if not emails:
+                msg = "API Fetch completed sucessfully. No emails."
+                return [], msg
+            else:
+                msg = f"API Fetch completed sucessfully. There are: {len(emails)} emails found. Deliver it to user and do not make up data."
+                return emails, msg
+
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            msg = "An error occured while fetching the emails."
+            return [], msg

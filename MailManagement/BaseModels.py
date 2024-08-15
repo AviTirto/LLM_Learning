@@ -43,6 +43,7 @@ class BaseChat(BaseLLM):
 
         response = self.chat.send_message(
             prompt,
+            tools = tools
         )
 
-        return response.text
+        return response
